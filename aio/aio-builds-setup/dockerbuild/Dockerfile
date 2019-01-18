@@ -24,6 +24,16 @@ ARG      AIO_DOMAIN_NAME=ngbuilds.io
 ARG TEST_AIO_DOMAIN_NAME=$AIO_DOMAIN_NAME.localhost
 ARG      AIO_GITHUB_ORGANIZATION=angular
 ARG TEST_AIO_GITHUB_ORGANIZATION=test-org
+ARG      AIO_AUTH0_GRANT_TYPE=test
+ARG TEST_AIO_AUTH0_GRANT_TYPE=test
+ARG      AIO_AUTH0_AUDIENCE=test
+ARG TEST_AIO_AUTH0_AUDIENCE=test
+ARG      AIO_AUTH0_CLIENT_ID=test
+ARG TEST_AIO_AUTH0_CLIENT_ID=test
+ARG      AIO_AUTH0_DOMAIN=test
+ARG TEST_AIO_AUTH0_DOMAIN=test
+ARG      AIO_AUTH0_REALM=test
+ARG TEST_AIO_AUTH0_REALM=test
 ARG      AIO_GITHUB_REPO=angular
 ARG TEST_AIO_GITHUB_REPO=test-repo
 ARG      AIO_GITHUB_TEAM_SLUGS=team,aio-contributors
@@ -49,6 +59,11 @@ ENV AIO_ARTIFACT_PATH=$AIO_ARTIFACT_PATH                          TEST_AIO_ARTIF
     AIO_BUILDS_DIR=$AIO_BUILDS_DIR                                TEST_AIO_BUILDS_DIR=$TEST_AIO_BUILDS_DIR                                \
     AIO_DOMAIN_NAME=$AIO_DOMAIN_NAME                              TEST_AIO_DOMAIN_NAME=$TEST_AIO_DOMAIN_NAME                              \
     AIO_GITHUB_ORGANIZATION=$AIO_GITHUB_ORGANIZATION              TEST_AIO_GITHUB_ORGANIZATION=$TEST_AIO_GITHUB_ORGANIZATION              \
+    AIO_AUTH0_GRANT_TYPE=$AIO_AUTH0_GRANT_TYPE                    TEST_AIO_AUTH0_GRANT_TYPE=$TEST_AIO_AUTH0_GRANT_TYPE                    \
+    AIO_AUTH0_AUDIENCE=$AIO_AUTH0_AUDIENCE                        TEST_AIO_AUTH0_AUDIENCE=$TEST_AIO_AUTH0_AUDIENCE                        \
+    AIO_AUTH0_CLIENT_ID=$AIO_AUTH0_CLIENT_ID                      TEST_AIO_AUTH0_CLIENT_ID=$TEST_AIO_AUTH0_CLIENT_ID                      \
+    AIO_AUTH0_DOMAIN=$AIO_AUTH0_DOMAIN                            TEST_AIO_AUTH0_DOMAIN=$TEST_AIO_AUTH0_DOMAIN                            \
+    AIO_AUTH0_REALM=$AIO_AUTH0_REALM                              TEST_AIO_AUTH0_REALM=$TEST_AIO_AUTH0_REALM                              \
     AIO_GITHUB_REPO=$AIO_GITHUB_REPO                              TEST_AIO_GITHUB_REPO=$TEST_AIO_GITHUB_REPO                              \
     AIO_GITHUB_TEAM_SLUGS=$AIO_GITHUB_TEAM_SLUGS                  TEST_AIO_GITHUB_TEAM_SLUGS=$TEST_AIO_GITHUB_TEAM_SLUGS                  \
     AIO_LOCALCERTS_DIR=/etc/ssl/localcerts                        TEST_AIO_LOCALCERTS_DIR=/etc/ssl/localcerts-test                        \
@@ -70,7 +85,6 @@ ENV AIO_ARTIFACT_PATH=$AIO_ARTIFACT_PATH                          TEST_AIO_ARTIF
 # Create directory for logs
 RUN mkdir /var/log/aio
 
-
 # Add extra package sources
 RUN apt-get update -y && apt-get install -y curl
 RUN curl --silent --show-error --location https://deb.nodesource.com/setup_10.x | bash -
@@ -90,6 +104,7 @@ RUN apt-get update -y && apt-get install -y \
     rsyslog \
     yarn
 RUN apt-get install -t jessie-backports -y nginx
+RUN yarn config set "strict-ssl" false -g
 RUN yarn global add pm2@2
 
 
@@ -161,6 +176,9 @@ RUN chmod a+x $AIO_SCRIPTS_SH_DIR/*
 RUN find $AIO_SCRIPTS_SH_DIR -maxdepth 1 -type f -printf "%P\n" \
     | while read file; do ln -s $AIO_SCRIPTS_SH_DIR/$file /usr/local/bin/aio-${file%.*}; done
 
+
+# Create directory basic http auth creds
+RUN mkdir /etc/basic-auth
 
 # Set up the Node.js scripts
 COPY scripts-js/ $AIO_SCRIPTS_JS_DIR/

@@ -15,6 +15,11 @@ export interface ArtifactInfo {
 
 export type ArtifactResponse = ArtifactInfo[];
 
+export interface PullRequest {
+  head_sha: string;
+  url: string;
+}
+
 export interface BuildInfo {
   reponame: string;
   failed: boolean;
@@ -24,6 +29,7 @@ export interface BuildInfo {
   has_artifacts: boolean;
   outcome: string; // e.g. 'success'
   vcs_revision: string; // HEAD SHA
+  pull_requests: PullRequest[];
   // there are other fields but they are not used in this code
 }
 
@@ -82,7 +88,7 @@ export class CircleCiApi {
       if (!artifact) {
         throw new Error(`Missing artifact (${artifactPath}) for CircleCI build: ${buildNumber}`);
       }
-      return artifact.url;
+      return `${artifact.url}?${this.tokenParam}`;
     } catch (error) {
       throw new Error(`CircleCI artifact URL request failed (${error.message})`);
     }

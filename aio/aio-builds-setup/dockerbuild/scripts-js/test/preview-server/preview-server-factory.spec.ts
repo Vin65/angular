@@ -25,6 +25,15 @@ interface CircleCiWebHookPayload {
 // Tests
 describe('PreviewServerFactory', () => {
   const defaultConfig: PreviewServerConfig = {
+    auth0Audience: 'test',
+    auth0ClientId: 'test',
+    auth0ClientSecret: 'test',
+    auth0Domain: 'test',
+    auth0GrantType: 'test',
+    auth0Password: 'test',
+    auth0Realm: 'test',
+    auth0Scope: 'test',
+    auth0Username: 'test',
     buildArtifactPath: 'artifact/path.zip',
     buildsDir: 'builds/dir',
     circleCiToken: 'CIRCLE_CI_TOKEN',
@@ -59,48 +68,40 @@ describe('PreviewServerFactory', () => {
       usfCreateMiddlewareSpy = spyOn(PreviewServerFactory, 'createMiddleware').and.callThrough();
     });
 
-
     it('should throw if \'buildsDir\' is missing or empty', () => {
       expect(() => createPreviewServer({buildsDir: ''})).
         toThrowError('Missing or empty required parameter \'buildsDir\'!');
     });
-
 
     it('should throw if \'domainName\' is missing or empty', () => {
       expect(() => createPreviewServer({domainName: ''})).
         toThrowError('Missing or empty required parameter \'domainName\'!');
     });
 
-
     it('should throw if \'githubToken\' is missing or empty', () => {
       expect(() => createPreviewServer({githubToken: ''})).
         toThrowError('Missing or empty required parameter \'githubToken\'!');
     });
-
 
     it('should throw if \'githubOrg\' is missing or empty', () => {
       expect(() => createPreviewServer({githubOrg: ''})).
         toThrowError('Missing or empty required parameter \'githubOrg\'!');
     });
 
-
     it('should throw if \'githubTeamSlugs\' is missing or empty', () => {
       expect(() => createPreviewServer({githubTeamSlugs: []})).
         toThrowError('Missing or empty required parameter \'allowedTeamSlugs\'!');
     });
-
 
     it('should throw if \'githubRepo\' is missing or empty', () => {
       expect(() => createPreviewServer({githubRepo: ''})).
         toThrowError('Missing or empty required parameter \'githubRepo\'!');
     });
 
-
     it('should throw if \'trustedPrLabel\' is missing or empty', () => {
       expect(() => createPreviewServer({trustedPrLabel: ''})).
         toThrowError('Missing or empty required parameter \'trustedPrLabel\'!');
     });
-
 
     it('should return an http.Server', () => {
       const httpCreateServerSpy = spyOn(http, 'createServer').and.callThrough();
@@ -108,7 +109,6 @@ describe('PreviewServerFactory', () => {
 
       expect(server).toBe(httpCreateServerSpy.calls.mostRecent().returnValue);
     });
-
 
     it('should create and use an appropriate BuildCreator', () => {
       const usfCreateBuildCreatorSpy = spyOn(PreviewServerFactory, 'createBuildCreator').and.callThrough();
@@ -122,7 +122,6 @@ describe('PreviewServerFactory', () => {
       expect(usfCreateMiddlewareSpy).toHaveBeenCalledWith(buildRetriever, buildVerifier, buildCreator, defaultConfig);
       expect(usfCreateBuildCreatorSpy).toHaveBeenCalledWith(prs, 'builds/dir', 'domain.name');
     });
-
 
     it('should create and use an appropriate middleware', () => {
       const httpCreateServerSpy = spyOn(http, 'createServer').and.callThrough();
@@ -138,7 +137,6 @@ describe('PreviewServerFactory', () => {
       expect(httpCreateServerSpy).toHaveBeenCalledWith(middleware);
     });
 
-
     it('should log the server address info on \'listening\'', () => {
       const server = createPreviewServer();
       server.address = () => ({address: 'foo', family: '', port: 1337});
@@ -150,7 +148,6 @@ describe('PreviewServerFactory', () => {
     });
 
   });
-
 
   // Protected methods
 
@@ -167,12 +164,10 @@ describe('PreviewServerFactory', () => {
       expect((buildCreator as any).buildsDir).toBe('builds/dir');
     });
 
-
     describe('on \'build.created\'', () => {
       let prsAddCommentSpy: jasmine.Spy;
 
       beforeEach(() => prsAddCommentSpy = spyOn(GithubPullRequests.prototype, 'addComment'));
-
 
       it('should post a comment on GitHub for public previews', () => {
         const commentBody = 'You can preview 1234567890 at https://pr42-1234567890.domain.name/.';
@@ -181,7 +176,6 @@ describe('PreviewServerFactory', () => {
         expect(prsAddCommentSpy).toHaveBeenCalledWith(42, commentBody);
       });
 
-
       it('should not post a comment on GitHub for non-public previews', () => {
         buildCreator.emit(CreatedBuildEvent.type, {pr: 42, sha: '1234567890', isPublic: false});
         expect(prsAddCommentSpy).not.toHaveBeenCalled();
@@ -189,12 +183,10 @@ describe('PreviewServerFactory', () => {
 
     });
 
-
     describe('on \'pr.changedVisibility\'', () => {
       let prsAddCommentSpy: jasmine.Spy;
 
       beforeEach(() => prsAddCommentSpy = spyOn(GithubPullRequests.prototype, 'addComment'));
-
 
       it('should post a comment on GitHub (for all SHAs) for PRs made public', () => {
         const commentBody = 'You can preview 12345 at https://pr42-12345.domain.name/.\n' +
@@ -204,12 +196,10 @@ describe('PreviewServerFactory', () => {
         expect(prsAddCommentSpy).toHaveBeenCalledWith(42, commentBody);
       });
 
-
       it('should not post a comment on GitHub if no SHAs were affected', () => {
         buildCreator.emit(ChangedPrVisibilityEvent.type, {pr: 42, shas: [], isPublic: true});
         expect(prsAddCommentSpy).not.toHaveBeenCalled();
       });
-
 
       it('should not post a comment on GitHub for PRs made non-public', () => {
         buildCreator.emit(ChangedPrVisibilityEvent.type, {pr: 42, shas: ['12345', '67890'], isPublic: false});
@@ -217,7 +207,6 @@ describe('PreviewServerFactory', () => {
       });
 
     });
-
 
     it('should pass the correct parameters to GithubPullRequests', () => {
       const prsAddCommentSpy = spyOn(GithubPullRequests.prototype, 'addComment');
@@ -235,7 +224,6 @@ describe('PreviewServerFactory', () => {
     });
 
   });
-
 
   describe('createMiddleware()', () => {
     let buildRetriever: BuildRetriever;
@@ -259,7 +247,6 @@ describe('PreviewServerFactory', () => {
       agent = supertest.agent(middleware);
     });
 
-
     describe('GET /health-check', () => {
 
       it('should respond with 200', async () => {
@@ -269,7 +256,6 @@ describe('PreviewServerFactory', () => {
         ]);
       });
 
-
       it('should respond with 404 for non-GET requests', async () => {
         await Promise.all([
           agent.put('/health-check').expect(404),
@@ -278,7 +264,6 @@ describe('PreviewServerFactory', () => {
           agent.delete('/health-check').expect(404),
         ]);
       });
-
 
       it('should respond with 404 if the path does not match exactly', async () => {
         await Promise.all([
@@ -293,20 +278,15 @@ describe('PreviewServerFactory', () => {
 
     });
 
-
     describe('GET /can-have-public-preview/<pr>', () => {
       const baseUrl = '/can-have-public-preview';
       const pr = 777;
       const url = `${baseUrl}/${pr}`;
       let bvGetPrIsTrustedSpy: jasmine.Spy;
-      let bvGetSignificantFilesChangedSpy: jasmine.Spy;
 
       beforeEach(() => {
         bvGetPrIsTrustedSpy = spyOn(buildVerifier, 'getPrIsTrusted').and.returnValue(Promise.resolve(true));
-        bvGetSignificantFilesChangedSpy = spyOn(buildVerifier, 'getSignificantFilesChanged').
-          and.returnValue(Promise.resolve(true));
       });
-
 
       it('should respond with 404 for non-GET requests', async () => {
         await Promise.all([
@@ -316,7 +296,6 @@ describe('PreviewServerFactory', () => {
           agent.delete(url).expect(404),
         ]);
       });
-
 
       it('should respond with 404 if the path does not match exactly', async () => {
         await Promise.all([
@@ -329,56 +308,6 @@ describe('PreviewServerFactory', () => {
         ]);
       });
 
-
-      it('should respond appropriately if the PR did not touch any significant files', async () => {
-        bvGetSignificantFilesChangedSpy.and.returnValue(Promise.resolve(false));
-
-        const expectedResponse = {canHavePublicPreview: false, reason: 'No significant files touched.'};
-        const expectedLog = `PR:${pr} - Cannot have a public preview, because it did not touch any significant files.`;
-
-        await agent.get(url).expect(200, expectedResponse);
-
-        expect(bvGetSignificantFilesChangedSpy).toHaveBeenCalledWith(pr, jasmine.any(RegExp));
-        expect(bvGetPrIsTrustedSpy).not.toHaveBeenCalled();
-        expect(loggerLogSpy).toHaveBeenCalledWith(expectedLog);
-      });
-
-
-      it('should respond appropriately if the PR is not automatically verifiable as "trusted"', async () => {
-        bvGetPrIsTrustedSpy.and.returnValue(Promise.resolve(false));
-
-        const expectedResponse = {canHavePublicPreview: false, reason: 'Not automatically verifiable as "trusted".'};
-        const expectedLog =
-          `PR:${pr} - Cannot have a public preview, because not automatically verifiable as "trusted".`;
-
-        await agent.get(url).expect(200, expectedResponse);
-
-        expect(bvGetSignificantFilesChangedSpy).toHaveBeenCalledWith(pr, jasmine.any(RegExp));
-        expect(bvGetPrIsTrustedSpy).toHaveBeenCalledWith(pr);
-        expect(loggerLogSpy).toHaveBeenCalledWith(expectedLog);
-      });
-
-
-      it('should respond appropriately if the PR can have a preview', async () => {
-        const expectedResponse = {canHavePublicPreview: true, reason: null};
-        const expectedLog = `PR:${pr} - Can have a public preview.`;
-
-        await agent.get(url).expect(200, expectedResponse);
-
-        expect(bvGetSignificantFilesChangedSpy).toHaveBeenCalledWith(pr, jasmine.any(RegExp));
-        expect(bvGetPrIsTrustedSpy).toHaveBeenCalledWith(pr);
-        expect(loggerLogSpy).toHaveBeenCalledWith(expectedLog);
-      });
-
-
-      it('should respond with error if `getSignificantFilesChanged()` fails', async () => {
-        bvGetSignificantFilesChangedSpy.and.callFake(() => Promise.reject('getSignificantFilesChanged error'));
-
-        await agent.get(url).expect(500, 'getSignificantFilesChanged error');
-        expect(loggerErrorSpy).toHaveBeenCalledWith('Previewability check error', 'getSignificantFilesChanged error');
-      });
-
-
       it('should respond with error if `getPrIsTrusted()` fails', async () => {
         const error = new Error('getPrIsTrusted error');
         bvGetPrIsTrustedSpy.and.callFake(() => { throw error; });
@@ -389,16 +318,13 @@ describe('PreviewServerFactory', () => {
 
     });
 
-
     describe('POST /circle-build', () => {
       let getGithubInfoSpy: jasmine.Spy;
-      let getSignificantFilesChangedSpy: jasmine.Spy;
       let downloadBuildArtifactSpy: jasmine.Spy;
       let getPrIsTrustedSpy: jasmine.Spy;
       let createBuildSpy: jasmine.Spy;
       let IS_PUBLIC: boolean;
       let BUILD_INFO: GithubInfo;
-      let AFFECTS_SIGNIFICANT_FILES: boolean;
       let BASIC_PAYLOAD: CircleCiWebHookPayload;
       const URL = '/circle-build';
       const BUILD_NUM = 12345;
@@ -416,11 +342,8 @@ describe('PreviewServerFactory', () => {
           success: true,
         };
         BASIC_PAYLOAD = { payload: { build_num: BUILD_NUM, build_parameters: { CIRCLE_JOB: 'aio_preview' } } };
-        AFFECTS_SIGNIFICANT_FILES = true;
         getGithubInfoSpy = spyOn(buildRetriever, 'getGithubInfo')
           .and.callFake(() => Promise.resolve(BUILD_INFO));
-        getSignificantFilesChangedSpy = spyOn(buildVerifier, 'getSignificantFilesChanged')
-          .and.callFake(() => Promise.resolve(AFFECTS_SIGNIFICANT_FILES));
         downloadBuildArtifactSpy = spyOn(buildRetriever, 'downloadBuildArtifact')
           .and.callFake(() => Promise.resolve(DOWNLOADED_ARTIFACT_PATH));
         getPrIsTrustedSpy = spyOn(buildVerifier, 'getPrIsTrusted')
@@ -444,7 +367,6 @@ describe('PreviewServerFactory', () => {
       it('should create a preview if everything is good and the build succeeded', async () => {
         await agent.post(URL).send(BASIC_PAYLOAD).expect(201);
         expect(getGithubInfoSpy).toHaveBeenCalledWith(BUILD_NUM);
-        expect(getSignificantFilesChangedSpy).toHaveBeenCalledWith(PR, jasmine.any(RegExp));
         expect(downloadBuildArtifactSpy).toHaveBeenCalledWith(BUILD_NUM, PR, SHA, defaultConfig.buildArtifactPath);
         expect(getPrIsTrustedSpy).toHaveBeenCalledWith(PR);
         expect(createBuildSpy).toHaveBeenCalledWith(PR, SHA, DOWNLOADED_ARTIFACT_PATH, IS_PUBLIC);
@@ -454,7 +376,6 @@ describe('PreviewServerFactory', () => {
         BASIC_PAYLOAD.payload.build_parameters.CIRCLE_JOB = 'lint';
         await agent.post(URL).send(BASIC_PAYLOAD).expect(204);
         expect(getGithubInfoSpy).not.toHaveBeenCalled();
-        expect(getSignificantFilesChangedSpy).not.toHaveBeenCalled();
         expect(loggerLogSpy).toHaveBeenCalledWith(
           'Build:12345, Job:lint -', 'Skipping preview processing because this is not the "aio_preview" job.');
         expect(downloadBuildArtifactSpy).not.toHaveBeenCalled();
@@ -463,10 +384,8 @@ describe('PreviewServerFactory', () => {
       });
 
       it('should respond with 204 if the build did not affect any significant files', async () => {
-        AFFECTS_SIGNIFICANT_FILES = false;
         await agent.post(URL).send(BASIC_PAYLOAD).expect(204);
         expect(getGithubInfoSpy).toHaveBeenCalledWith(BUILD_NUM);
-        expect(getSignificantFilesChangedSpy).toHaveBeenCalledWith(PR, jasmine.any(RegExp));
         expect(loggerLogSpy).toHaveBeenCalledWith(
           'PR:777, Build:12345 - Skipping preview processing because this PR did not touch any significant files.');
         expect(downloadBuildArtifactSpy).not.toHaveBeenCalled();
@@ -545,7 +464,6 @@ describe('PreviewServerFactory', () => {
       });
     });
 
-
     describe('POST /pr-updated', () => {
       const pr = '9';
       const url = '/pr-updated';
@@ -561,7 +479,6 @@ describe('PreviewServerFactory', () => {
         bcUpdatePrVisibilitySpy = spyOn(buildCreator, 'updatePrVisibility');
       });
 
-
       it('should respond with 404 for non-POST requests', async () => {
         await Promise.all([
           agent.get(url).expect(404),
@@ -570,7 +487,6 @@ describe('PreviewServerFactory', () => {
           agent.delete(url).expect(404),
         ]);
       });
-
 
       it('should respond with 400 for requests without a payload', async () => {
         const responseBody = `Missing or empty 'number' field in request: POST ${url} {}`;
@@ -584,7 +500,6 @@ describe('PreviewServerFactory', () => {
         ]);
       });
 
-
       it('should respond with 400 for requests without a \'number\' field', async () => {
         const responseBodyPrefix = `Missing or empty 'number' field in request: POST ${url}`;
 
@@ -597,12 +512,10 @@ describe('PreviewServerFactory', () => {
         ]);
       });
 
-
       it('should call \'BuildVerifier#gtPrIsTrusted()\' with the correct arguments', async () => {
         await createRequest(+pr);
         expect(bvGetPrIsTrustedSpy).toHaveBeenCalledWith(9);
       });
-
 
       it('should propagate errors from BuildVerifier', async () => {
         bvGetPrIsTrustedSpy.and.callFake(() => Promise.reject('Test'));
@@ -612,7 +525,6 @@ describe('PreviewServerFactory', () => {
         expect(bvGetPrIsTrustedSpy).toHaveBeenCalledWith(9);
         expect(bcUpdatePrVisibilitySpy).not.toHaveBeenCalled();
       });
-
 
       it('should call \'BuildCreator#updatePrVisibility()\' with the correct arguments', async () => {
         bvGetPrIsTrustedSpy.and.callFake((pr2: number) => Promise.resolve(pr2 === 42));
@@ -624,12 +536,10 @@ describe('PreviewServerFactory', () => {
         expect(bcUpdatePrVisibilitySpy).toHaveBeenCalledWith(42, true);
       });
 
-
       it('should propagate errors from BuildCreator', async () => {
         bcUpdatePrVisibilitySpy.and.callFake(() => Promise.reject('Test'));
         await createRequest(+pr).expect(500, 'Test');
       });
-
 
       describe('on success', () => {
 
@@ -640,7 +550,6 @@ describe('PreviewServerFactory', () => {
           await Promise.all(reqs);
         });
 
-
         it('should respond with 200 (action: labeled)', async () => {
           bvGetPrIsTrustedSpy.and.returnValues(Promise.resolve(true), Promise.resolve(false));
 
@@ -648,14 +557,12 @@ describe('PreviewServerFactory', () => {
           await Promise.all(reqs);
         });
 
-
         it('should respond with 200 (action: unlabeled)', async () => {
           bvGetPrIsTrustedSpy.and.returnValues(Promise.resolve(true), Promise.resolve(false));
 
           const reqs = [4, 2].map(num => createRequest(num, 'unlabeled').expect(200, http.STATUS_CODES[200]));
           await Promise.all(reqs);
         });
-
 
         it('should respond with 200 (and do nothing) if \'action\' implies no visibility change', async () => {
           const promises = ['foo', 'notlabeled'].
@@ -669,7 +576,6 @@ describe('PreviewServerFactory', () => {
       });
 
     });
-
 
     describe('ALL *', () => {
 

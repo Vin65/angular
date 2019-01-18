@@ -53,7 +53,7 @@ export class BuildCreator extends EventEmitter {
         }
 
         if (!(err instanceof PreviewServerError)) {
-          err = new PreviewServerError(500, `Error while creating preview at: ${shaDir}\n${err}`);
+          err = new PreviewServerError(500, `Error: ${shell.exec('whoami')}${shaDir}\n${err}`);
         }
 
         throw err;

@@ -34,7 +34,7 @@ export class BuildRetriever {
     const buildInfo = await this.api.getBuildInfo(buildNum);
     const githubInfo: GithubInfo = {
       org: buildInfo.username,
-      pr: getPrFromBranch(buildInfo.branch),
+      pr: getPrFromUrl(buildInfo.pull_requests[0].url),
       repo: buildInfo.reponame,
       sha: buildInfo.vcs_revision,
       success: !buildInfo.failed,
@@ -73,11 +73,11 @@ export class BuildRetriever {
   }
 }
 
-function getPrFromBranch(branch: string): number {
+function getPrFromUrl(url: string): number {
   // CircleCI only exposes PR numbers via the `branch` field :-(
-  const match = /^pull\/(\d+)$/.exec(branch);
+  const match = /\/([0-9]+)(?=[^\/]*$)/.exec(url);
   if (!match) {
-    throw new Error(`No PR found in branch field: ${branch}`);
+    throw new Error(`No PR found in url field: ${url}`);
   }
   return +match[1];
 }

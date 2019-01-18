@@ -135,3 +135,47 @@ be regenerated, the app will rebuild and the page will reload.
 
 * If you get a build error complaining about examples or any other odd behavior, be sure to consult
 the [Authors Style Guide](https://angular.io/guide/docs-style-guide).
+
+
+# WDI Notes:
+
+1. Create a new ec2 instance - AMI: ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-20180912 (ami-0e32ec5bc225539f5)
+1. Setup application load balancer with https access
+2. SSL through AWS apply to loadbalancer.
+3. Point wildcard A record for *.wdibuilds.io to load balancer which has WDIBuilds instance in it.
+4. clone angular fork from lucasklaassen aio-build-updates
+5. set up the following directories:
+  a. ~/home/wdi-logs
+  b. var/www/aio-builds/ (chown this directory for the user www-data)
+  c. ~/home/wdi-secrets
+    1. Add the following files: CIRCLE_CI_TOKEN, GITHUB_TOKEN, AUTH0_CLIENT_SECRET, AUTH0_PASSWORD, AUTH0_USERNAME
+  d. ~/home/angular/aio/aio-builds-setup/dockerbuild
+6. Build docker image:
+./angular/aio/aio-builds-setup/scripts/create-image.sh wdi-builds \
+  --build-arg AIO_GITHUB_ORGANIZATION=Vin65 \
+  --build-arg AIO_GITHUB_REPO=subscriptions-admin \
+  --build-arg AIO_DOMAIN_NAME=wdibuilds.io \
+  --build-arg AIO_GITHUB_TEAM_SLUGS=developers,admins \
+  --build-arg AIO_AUTH0_GRANT_TYPE="http://auth0.com/oauth/grant-type/password-realm" \
+  --build-arg AIO_AUTH0_AUDIENCE="https://api.winedirect.com" \
+  --build-arg AIO_AUTH0_CLIENT_ID="a9tDzQ2ouUjRIItR8mypoyari3vcKWuA" \
+  --build-arg AIO_AUTH0_DOMAIN="https://login.staging.winedirect.com" \
+  --build-arg AIO_AUTH0_REALM="MSSQL"
+7. Run docker image:
+sudo docker run \
+  --detach \
+  --dns 127.0.0.1 \
+  --name wdi-builds-93 \
+  --publish 80:80 \
+  --publish 443:443 \
+  --restart unless-stopped \
+  --volume /home/wdi-secrets:/aio-secrets:ro \
+  --volume /var/www/aio-builds:/var/www/aio-builds \
+  --volume /home/wdi-logs:/var/log/aio \
+  --volume /home/angular/aio/aio-builds-setup/dockerbuild:/dockerbuild \
+  --volume /etc/basic-auth:/etc/basic-auth \
+  wdi-builds
+8. Setup basic http auth with nginx: https://www.digitalocean.com/community/tutorials/how-to-set-up-basic-http-authentication-with-nginx-on-ubuntu-14-04
+  a. Add folder /etc/basic-auth and add .htpasswd file to it.
+  b. Add volume to docker container: /etc/basic-auth:/etc/basic-auth
+9. Gotta disable basic http auth for OPTIONS call in nginx (commits in forked branch)

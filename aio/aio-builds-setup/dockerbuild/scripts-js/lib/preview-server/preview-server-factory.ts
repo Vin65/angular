@@ -1,8 +1,10 @@
 // Imports
 import * as bodyParser from 'body-parser';
+import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import {AddressInfo} from 'net';
+import * as request from 'request';
 import {CircleCiApi} from '../common/circle-ci-api';
 import {GithubApi} from '../common/github-api';
 import {GithubPullRequests} from '../common/github-pull-requests';
@@ -18,6 +20,15 @@ const AIO_PREVIEW_JOB = 'aio_preview';
 
 // Interfaces - Types
 export interface PreviewServerConfig {
+  auth0Audience: string;
+  auth0ClientId: string;
+  auth0ClientSecret: string;
+  auth0Domain: string;
+  auth0GrantType: string;
+  auth0Password: string;
+  auth0Realm: string;
+  auth0Scope: string;
+  auth0Username: string;
   downloadsDir: string;
   downloadSizeLimit: number;
   buildArtifactPath: string;
@@ -64,7 +75,15 @@ export class PreviewServerFactory {
                                  buildCreator: BuildCreator, cfg: PreviewServerConfig): express.Express {
     const middleware = express();
     const jsonParser = bodyParser.json();
-    const significantFilesRe = new RegExp(cfg.significantFilesPattern);
+
+    // corsOptions for cors midddleware
+    const corsOptions = {
+      allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,X-Access-Token,Authorization',
+      methods: 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
+    };
+
+    middleware.use(cors(corsOptions));
+    middleware.options('*', cors(corsOptions));
 
     // RESPOND TO IS-ALIVE PING
     middleware.get(/^\/health-check\/?$/, (_req, res) => res.sendStatus(200));
@@ -75,11 +94,7 @@ export class PreviewServerFactory {
       try {
         const pr = +canHavePublicPreviewRe.exec(req.url)![1];
 
-        if (!await buildVerifier.getSignificantFilesChanged(pr, significantFilesRe)) {
-          // Cannot have preview: PR did not touch relevant files: `aio/` or `packages/` (except for spec files).
-          res.send({canHavePublicPreview: false, reason: 'No significant files touched.'});
-          logger.log(`PR:${pr} - Cannot have a public preview, because it did not touch any significant files.`);
-        } else if (!await buildVerifier.getPrIsTrusted(pr)) {
+        if (!await buildVerifier.getPrIsTrusted(pr)) {
           // Cannot have preview: PR not automatically verifiable as "trusted".
           res.send({canHavePublicPreview: false, reason: 'Not automatically verifiable as "trusted".'});
           logger.log(`PR:${pr} - Cannot have a public preview, because not automatically verifiable as "trusted".`);
@@ -90,6 +105,39 @@ export class PreviewServerFactory {
         }
       } catch (err) {
         logger.error('Previewability check error', err);
+        respondWithError(res, err);
+      }
+    });
+
+    // Auth0 Token Call
+    middleware.get(/^\/auth-check\/?$/, async (_, res) => {
+      const response = res;
+      try {
+        const options = {
+          body: {
+            audience: cfg.auth0Audience,
+            client_id: cfg.auth0ClientId,
+            client_secret: cfg.auth0ClientSecret,
+            grant_type: cfg.auth0GrantType,
+            password: cfg.auth0Password,
+            realm: cfg.auth0Realm,
+            scope: cfg.auth0Scope,
+            username: cfg.auth0Username,
+          },
+          json: true,
+          method: 'POST',
+          uri: `${cfg.auth0Domain}/oauth/token`,
+        };
+        request(options, (error: any, __: any, body: any) => {
+          if (error) {
+            logger.error('Auth0 request for token error', error);
+            respondWithError(res, error);
+          }
+          response.setHeader('Content-Type', 'application/json');
+          response.send(JSON.stringify({ access_token: body.access_token }));
+        });
+      } catch (err) {
+        logger.error('Auth0 token error', err);
         respondWithError(res, err);
       }
     });
@@ -132,14 +180,6 @@ export class PreviewServerFactory {
           `Invalid webhook: expected "githubOrg" property to equal "${cfg.githubOrg}" but got "${org}".`);
         assert(cfg.githubRepo === repo,
           `Invalid webhook: expected "githubRepo" property to equal "${cfg.githubRepo}" but got "${repo}".`);
-
-        // Do not deploy unless this PR has touched relevant files: `aio/` or `packages/` (except for spec files)
-        if (!await buildVerifier.getSignificantFilesChanged(pr, significantFilesRe)) {
-          res.sendStatus(204);
-          logger.log(`PR:${pr}, Build:${buildNum} - ` +
-                     `Skipping preview processing because this PR did not touch any significant files.`);
-          return;
-        }
 
         const artifactPath = await buildRetriever.downloadBuildArtifact(buildNum, pr, sha, cfg.buildArtifactPath);
         const isPublic = await buildVerifier.getPrIsTrusted(pr);

@@ -29,3 +29,10 @@ yarn-error.log
 
 # rollup-test output
 /modules/rollup-test/dist/
+
+www/
+logs/
+secrets/
+bin/
+
+docker-compose.yml

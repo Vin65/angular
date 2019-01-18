@@ -29,6 +29,10 @@ describe('BuildRetriever', () => {
       reponame: 'REPO',
       username: 'ORG',
       vcs_revision: 'COMMIT',
+      pull_requests: [{
+        url: 'https://pr.com/777',
+        head_sha: '123'
+      }]
     };
 
     api = new CircleCiApi('ORG', 'REPO', 'TOKEN');
@@ -62,7 +66,6 @@ describe('BuildRetriever', () => {
     });
   });
 
-
   describe('getGithubInfo', () => {
     it('should request the info from CircleCI', async () => {
       const retriever = new BuildRetriever(api, MAX_DOWNLOAD_SIZE, DOWNLOAD_DIR);
@@ -82,7 +85,6 @@ describe('BuildRetriever', () => {
       }
     });
   });
-
 
   describe('downloadBuildArtifact', () => {
     const ARTIFACT_CONTENTS = 'ARTIFACT CONTENTS';

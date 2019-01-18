@@ -39,6 +39,10 @@ const UNTRUSTED_USER = 'untrusted-user';
 const BASIC_BUILD_INFO = {
   branch: `pull/${PrNums.TRUST_CHECK_ACTIVE_TRUSTED_USER}`,
   failed: false,
+  pull_requests: [{
+    head_sha: '123',
+    url: `https://pr.com/${PrNums.TRUST_CHECK_ACTIVE_TRUSTED_USER}`,
+  }],
   reponame: AIO_GITHUB_REPO,
   username: AIO_GITHUB_ORGANIZATION,
   vcs_revision: SHA,

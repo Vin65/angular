@@ -20,16 +20,6 @@ export class BuildVerifier {
   }
 
   /**
-   * Check whether a PR contains files that are significant to the build.
-   * @param pr The number of the PR to check
-   * @param significantFilePattern A regex that selects files that are significant.
-   */
-  public async getSignificantFilesChanged(pr: number, significantFilePattern: RegExp): Promise<boolean> {
-    const files = await this.prs.fetchFiles(pr);
-    return files.some(file => significantFilePattern.test(file.filename));
-  }
-
-  /**
    * Check whether a PR is trusted.
    * @param pr The number of the PR to check.
    * @returns true if the PR is trusted.
